@@ -49,17 +49,27 @@ class ScrapeLinks():
             time.sleep(5)
         print('done')
         driver.close()
+    def better_help(zip):
+        driver = init_driver()
+        driver.get('https://www.betterhelp.com/therapists/')
+        time.sleep(4)
+        driver.find_element(By.XPATH, '//*[@id="search"]').send_keys(zip)
+        driver.find_element(By.XPATH, '/html/body/div[3]/div[2]/div[1]/div/div/div/form/button').click()
+        time.sleep(4)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        for therapist_link_div in soup.find_all('div', {'class':'therapist-name'}):
+            for therapist_link in therapist_link_div.find_all('a'):
+                 print(therapist_link['href'])
+                 all_links.append('https://www.betterhelp.com' + therapist_link['href'])
 class GetInfo():
     def call_links():
+        driver = init_driver()
         for i in range(len(all_links)):
             if(all_links[i].__contains__('psychologytoday')):
-               driver = init_driver()
-               name, insurance = GetInfo.psychology_today(driver, all_links[i])
+               _, name, insurance, endorsed, number = GetInfo.psychology_today(driver, all_links[i])
+               print(name,insurance,endorsed,number)
             elif(all_links[i].__contains__('goodtherapy')):
-                driver = init_driver()
                 name, insurance = GetInfo.good_therapy(driver, all_links[i])
-            else:
-                driver = init_driver()
             db.insert({'name':name, 'insurance':insurance})
         driver.close()
     def psychology_today(driver, link):
@@ -67,31 +77,36 @@ class GetInfo():
         if(driver.page_source.__contains__('Accepted Insurance Plans') == True):
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             #get name
-            for name_div in soup.find_all('div', {'class':'col-sm-6 col-md-7 col-lg-7 name-title-column'}):
+            for name_div in soup.find_all('div', {'class':'profile-heading-content'}):
                 for name in name_div.find_all('h1'):
                     print('name' + name.text.strip())
                     title_name = name.text.strip()
             #get insurance
             insurance = []
-            for insurance_div_one in soup.find_all('div', {'class': 'spec-list attributes-insurance'}):
-                for insurance_div_two in insurance_div_one.find_all('div', {'class': 'col-split-xs-1 col-split-md-2'}):
-                    for insurace_company in insurance_div_two.find_all('ul', {'class': 'attribute-list copy-small'}):
-                        for li_company in insurace_company.find_all('li'):
-                            insurance.append(li_company.text.strip())
-            return title_name, insurance 
+            for insurance_div in soup.find_all('div', {'class':'insurance'}):
+                for insurance_ul in insurance_div.find_all('ul', {'class':'section-list columns'}):
+                    for insurance_li in insurance_ul.find_all('li'):
+                        insurance.append(insurance_li.text.strip())
+            if(driver.page_source.__contains__('endorsement-count profile-badge clickable')):
+                endorsed = True
+            else:
+                endorsed = False
+            for number in soup.find_all('a', {'class': 'lets-connect-phone-number'}):
+                number = number.text.strip()
+            return link, title_name, insurance, endorsed, number
         driver.close()
     def good_therapy(driver, link):
         driver = init_driver()
         driver.get(link) 
-        soup = BeautifulSoup(driver.page_sourc, 'html.parser')
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
         insurance = []
         for insurance_ul in soup.find_all('ul', {'class':'billingData'}):
             for insurance_li in insurance_ul.find_all('li'):
                 print(insurance_li.text.strip())
                 insurance.append(insurance_li.text.strip())
-        for insurance_name in soup.find_all('h1', {'class', 'profileName'}):
-            print(insurance_name.text.strip())
-            name = insurance_name.text.strip()
+        for user_name in soup.find_all('h1', {'id', 'profileTitle_id'}):
+            print(user_name.text.strip())
+            name = user_name.text.strip()
         return name, insurance
 
 def init_driver():
@@ -103,10 +118,12 @@ def init_driver():
     driver = uc.Chrome(options=options)
     return driver
 
+
 #ScrapeLinks.psychology_today('06042')
 #ScrapeLinks.good_therapy('06042')
+ScrapeLinks.better_help('06042')
 #GetInfo.call_links()
 #print(all_links)
-User = Query()
-print(db.search(User.insurance == "Aetna"))
+#User = Query()
+#print(db.search(User.insurance == "Aetna"))
 #GetInfo.psychology_today('https://www.psychologytoday.com/us/therapists/steven-w-graham-lcsw-vernon-ct/257932')
