@@ -12,14 +12,14 @@ import time
 import re
 all_links = []
 db = TinyDB('db.json')
+def remove_dupes(input_array):
+    return [*set(input_array)]
 class ScrapeLinks():
     def psychology_today(zip):
         driver = init_driver()
         driver.get('https://www.psychologytoday.com/us/therapists/' + zip +'?page=1')
         i=1
-        print("ff")
         while(driver.current_url.__contains__('https://www.psychologytoday.com/us/therapists/' + zip + '?state=') == False):
-            print("ff")
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             for link in soup.find_all('a', {'class': 'profile-title'}):
                 #print(link.get('href'))
@@ -32,6 +32,7 @@ class ScrapeLinks():
         driver.get('https://www.goodtherapy.org/')
         time.sleep(4)
         driver.find_element(By.XPATH, '//*[@id="direccion_maps_header"]').send_keys(str(zip))
+        time.sleep(5)
         driver.find_element(By.XPATH, '//*[@id="header-widget_button"]').click()
         time.sleep(4)
         page_number = 1
@@ -59,18 +60,22 @@ class ScrapeLinks():
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         for therapist_link_div in soup.find_all('div', {'class':'therapist-name'}):
             for therapist_link in therapist_link_div.find_all('a'):
-                 print(therapist_link['href'])
                  all_links.append('https://www.betterhelp.com' + therapist_link['href'])
 class GetInfo():
     def call_links():
         driver = init_driver()
+        links = remove_dupes(all_links)
         for i in range(len(all_links)):
-            if(all_links[i].__contains__('psychologytoday')):
-               _, name, insurance, endorsed, number = GetInfo.psychology_today(driver, all_links[i])
+            if(links[i].__contains__('psychologytoday')):
+               _, name, insurance, endorsed, number = GetInfo.psychology_today(driver, links[i])
                print(name,insurance,endorsed,number)
+               license = None
             elif(all_links[i].__contains__('goodtherapy')):
-                name, insurance = GetInfo.good_therapy(driver, all_links[i])
-            db.insert({'name':name, 'insurance':insurance})
+                name, insurance = GetInfo.good_therapy(driver, links[i])
+                license = None
+            elif(all_links[i].__contains__('betterhelp')):
+                name, insurance, license = GetInfo.better_help(driver, links[i])
+            print(db.insert({'name':name, 'insurance':insurance, 'license':license, 'link':links[i]}))
         driver.close()
     def psychology_today(driver, link):
         driver.get(link)
@@ -96,19 +101,27 @@ class GetInfo():
             return link, title_name, insurance, endorsed, number
         driver.close()
     def good_therapy(driver, link):
-        driver = init_driver()
+        print('start')
         driver.get(link) 
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         insurance = []
         for insurance_ul in soup.find_all('ul', {'class':'billingData'}):
             for insurance_li in insurance_ul.find_all('li'):
-                print(insurance_li.text.strip())
                 insurance.append(insurance_li.text.strip())
-        for user_name in soup.find_all('h1', {'id', 'profileTitle_id'}):
-            print(user_name.text.strip())
+        for user_name in soup.find_all('h1', {'id': 'profileTitle_id'}):
             name = user_name.text.strip()
         return name, insurance
-
+    def better_help(driver, link):
+        print(link)
+        driver.get(link)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        license_id = []
+        for name in soup.find_all('h1', {'class':'counselor-profile-header__name'}):
+            name = name.text.strip()
+        for license_div in soup.find_all('div', {'id':'licensing'}):
+            for license_text in license_div.find_all('p'):
+                license_id.append(license_text.text.strip())
+        return name, None, license_id
 def init_driver():
     PATH = "chromedriver.exe"
     options = webdriver.ChromeOptions()
@@ -119,10 +132,10 @@ def init_driver():
     return driver
 
 
-#ScrapeLinks.psychology_today('06042')
-#ScrapeLinks.good_therapy('06042')
+ScrapeLinks.psychology_today('06042')
+ScrapeLinks.good_therapy('06042')
 ScrapeLinks.better_help('06042')
-#GetInfo.call_links()
+GetInfo.call_links()
 #print(all_links)
 #User = Query()
 #print(db.search(User.insurance == "Aetna"))
