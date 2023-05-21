@@ -1,0 +1,66 @@
+.ParentThera {
+  display: grid;
+  grid-template-columns: 1fr 1fr  ;
+  font-family: Proxima Nova, Open Sans, Helvetica Neue, Arial, sans-serif;
+}
+.TheraProfile {
+  display: grid;
+  grid-column: 1;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 50px 50px 50px;
+  padding: 10px;
+  border-style: solid;
+}
+.TheraInfo {
+  display: grid;
+  grid-template-columns: 75px 75px 1fr;
+  grid-template-rows: 25px 1fr 25px;
+  padding: 10px;
+  border-style: solid;
+  grid-column: 2;
+}
+#ProfilePic {
+  height: 100px;
+  grid-row-start: 1;
+  grid-row-end: 3;
+}
+#Name {
+  grid-row-start: 1;
+  grid-row-end: 1;
+  grid-column-start: 2;
+  grid-column-end: 2;
+}
+#PhoneNumber {
+  grid-row-start: 2;
+  grid-row-end: 2;
+}
+#Email {
+  grid-row-start: 2;
+  grid-row-end: 2;
+}
+#ViewMore {
+  color: green;
+  grid-row: 3;
+  grid-column: span 3;
+  width: 100%;
+  padding: 10px;
+}
+
+#InsuranceHead{
+    grid-row:1;
+    margin-bottom:0px;
+}
+#InsuranceText{
+    grid-row:2;
+}
+
+#LocationText {
+  text-align: center;
+  grid-column: span 4;
+  grid-row: 3;
+}
+
+#TheraBio, #TheraBioText{
+    grid-column: 3;
+    max-width: 150px;
+}

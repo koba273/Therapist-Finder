@@ -48,7 +48,6 @@ class ScrapeLinks():
             driver.get(str(driver.current_url) + "&search[p]=" + str(page_number))
             #page_number +=1
             time.sleep(5)
-        print('done')
         driver.close()
     def better_help(zip):
         driver = init_driver()
@@ -61,19 +60,20 @@ class ScrapeLinks():
         for therapist_link_div in soup.find_all('div', {'class':'therapist-name'}):
             for therapist_link in therapist_link_div.find_all('a'):
                  all_links.append('https://www.betterhelp.com' + therapist_link['href'])
+        driver.close()
 class GetInfo():
     def call_links():
         driver = init_driver()
         links = remove_dupes(all_links)
-        for i in range(len(all_links)):
+        for i in range(len(links)-1):
             if(links[i].__contains__('psychologytoday')):
                _, name, insurance, endorsed, number = GetInfo.psychology_today(driver, links[i])
                print(name,insurance,endorsed,number)
                license = None
-            elif(all_links[i].__contains__('goodtherapy')):
+            elif(links[i].__contains__('goodtherapy')):
                 name, insurance = GetInfo.good_therapy(driver, links[i])
                 license = None
-            elif(all_links[i].__contains__('betterhelp')):
+            elif(links[i].__contains__('betterhelp')):
                 name, insurance, license = GetInfo.better_help(driver, links[i])
             print(db.insert({'name':name, 'insurance':insurance, 'license':license, 'link':links[i]}))
         driver.close()
@@ -81,7 +81,6 @@ class GetInfo():
         driver.get(link)
         if(driver.page_source.__contains__('Accepted Insurance Plans') == True):
             soup = BeautifulSoup(driver.page_source, 'html.parser')
-            #get name
             for name_div in soup.find_all('div', {'class':'profile-heading-content'}):
                 for name in name_div.find_all('h1'):
                     print('name' + name.text.strip())
@@ -101,8 +100,7 @@ class GetInfo():
             return link, title_name, insurance, endorsed, number
         driver.close()
     def good_therapy(driver, link):
-        print('start')
-        driver.get(link) 
+        driver.get(link)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         insurance = []
         for insurance_ul in soup.find_all('ul', {'class':'billingData'}):
@@ -112,7 +110,6 @@ class GetInfo():
             name = user_name.text.strip()
         return name, insurance
     def better_help(driver, link):
-        print(link)
         driver.get(link)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         license_id = []
@@ -127,7 +124,6 @@ def init_driver():
     options = webdriver.ChromeOptions()
     options.headless = False
     options.add_argument("--window-size=1920,1080")
-    #driver = webdriver.Chrome(options=options, executable_path=PATH)
     driver = uc.Chrome(options=options)
     return driver
 
