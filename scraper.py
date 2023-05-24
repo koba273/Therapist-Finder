@@ -127,11 +127,14 @@ def init_driver():
     driver = uc.Chrome(options=options)
     return driver
 
+def bulk_zip(zip):
+    for i in range(len(zip)):
+        ScrapeLinks.psychology_today(i)
+        ScrapeLinks.good_therapy(i)
+        ScrapeLinks.better_help(i)
+        GetInfo.call_links()
 
-ScrapeLinks.psychology_today('06042')
-ScrapeLinks.good_therapy('06042')
-ScrapeLinks.better_help('06042')
-GetInfo.call_links()
+bulk_zip = ['06042','']
 #print(all_links)
 #User = Query()
 #print(db.search(User.insurance == "Aetna"))
